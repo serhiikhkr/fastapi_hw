@@ -16,7 +16,7 @@ class ContactCreate(ContactBase):
     pass
 
 
-class Contact(ContactBase):
+class ContactResponse(ContactBase):
     id: int
 
     class Config:

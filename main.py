@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from models import Contact
 from db import get_db
-from schemas import Contact, ContactCreate
+from schemas import ContactResponse, ContactCreate
 
 app = FastAPI()
 
@@ -37,21 +37,19 @@ async def get_all_contacts(db: Session = Depends(get_db)):
     return contacts
 
 
-@app.post("/newcontact/", response_model=Contact)
+@app.post("/newcontact/", response_model=ContactResponse)
 async def create_contact(new_contact: ContactCreate, db: Session = Depends(get_db)):
     try:
-        # Створення нового контакту
         contact = Contact(**new_contact.model_dump())
         db.add(contact)
         db.commit()
         return contact
-    except Exception as e:
-        # Якщо виникла помилка при створенні контакту
+    except Exception:
         raise HTTPException(status_code=400, detail="Помилка створення контакту")
 
 
 # Endpoint для отримання одного контакту за ідентифікатором
-@app.get("/contacts/{contact_id}", response_model=Contact)
+@app.get("/contacts/{contact_id}", response_model=ContactResponse)
 async def get_contact(contact_id: int, db: Session = Depends(get_db)):
     contact = db.query(Contact).filter(Contact.id == contact_id).first()
     if contact is None:
@@ -60,8 +58,8 @@ async def get_contact(contact_id: int, db: Session = Depends(get_db)):
 
 
 # Endpoint для оновлення контакту за ідентифікатором
-@app.put("/contacts/{contact_id}", response_model=ContactCreate)
-async def update_contact(contact_id: int, updated_contact: Contact, db: Session = Depends(get_db)):
+@app.put("/contact/{contact_id}", response_model=ContactResponse)
+async def update_contact(contact_id: int, updated_contact: ContactCreate, db: Session = Depends(get_db)):
     contact = db.query(Contact).filter(Contact.id == contact_id).first()
     if contact is None:
         raise HTTPException(status_code=404, detail="Контакт не знайдено")
@@ -76,10 +74,8 @@ async def update_contact(contact_id: int, updated_contact: Contact, db: Session 
     return contact
 
 
-#
-#
 # Endpoint для видалення контакту за ідентифікатором
-@app.delete("/contacts/{contact_id}", response_model=Contact)
+@app.delete("/contacts/{contact_id}")
 async def delete_contact(contact_id: int, db: Session = Depends(get_db)):
     contact = db.query(Contact).filter(Contact.id == contact_id).first()
     if contact is None:
@@ -89,9 +85,8 @@ async def delete_contact(contact_id: int, db: Session = Depends(get_db)):
     return {"message": "Контакт видалено успішно"}
 
 
-#
-#
-@app.get("/contacts/search/", response_model=Contact)
+# Питання ( Чому додаючи респонс модел виникае помилка)
+@app.get("/contacts/search/")
 async def search_contacts(
         query: str = Query(..., min_length=1, description="Пошуковий запит (ім'я, прізвище або email)"),
         db: Session = Depends(get_db)
@@ -105,11 +100,11 @@ async def search_contacts(
         )
         .all()
     )
-    return contacts
+    return list(contacts)
 
 
 # Endpoint для отримання контактів з днями народження на найближчі 7 днів
-@app.get("/contacts/birthdays/", response_model=Contact)
+@app.get("/contacts/birthdays/")
 async def upcoming_birthdays(db: Session = Depends(get_db)):
     today = datetime.now().date()
     next_week = today + timedelta(days=7)
