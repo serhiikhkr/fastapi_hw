@@ -100,7 +100,7 @@ async def search_contacts(
         )
         .all()
     )
-    return list(contacts)
+    return contacts
 
 
 # Endpoint для отримання контактів з днями народження на найближчі 7 днів
